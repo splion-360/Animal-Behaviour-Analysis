@@ -1,0 +1,8 @@
+Train without GL:
+	Mean displacement error : 0.0121
+	Final displacement error: 0.0152 
+
+Train with GL:
+	Mean displacement error : 0.0107
+	Final displacement error: 0.0134 
+	
