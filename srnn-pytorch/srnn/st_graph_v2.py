@@ -6,7 +6,7 @@ Author : Anirudh Vemula
 Date : 15th March 2017
 '''
 import numpy as np
-from helper import getVector
+from helper import getVector,getAngle
 
 
 class ST_GRAPH():
@@ -152,8 +152,12 @@ class ST_GRAPH():
             retNodes = np.zeros((self.seq_length, numNodes, 2))
             retEdges = np.zeros((self.seq_length, numNodes*numNodes, 2))  # Diagonal contains temporal edges
         else:
-            retNodes = np.zeros((self.seq_length, numNodes, self.keypoints,2))
-            retEdges = np.zeros((self.seq_length, numNodes*numNodes, self.keypoints,2)) 
+            # retNodes = np.zeros((self.seq_length, numNodes, self.keypoints,2))
+            # retEdges = np.zeros((self.seq_length, numNodes*numNodes, self.keypoints,2)) 
+            
+            retNodes = np.zeros((self.seq_length, numNodes, self.keypoints,3))
+            retEdges = np.zeros((self.seq_length, numNodes*numNodes, self.keypoints,3)) 
+            
         retNodePresent = [[] for c in range(self.seq_length)]
         retEdgePresent = [[] for c in range(self.seq_length)]
 
@@ -168,6 +172,7 @@ class ST_GRAPH():
                     else:
                         retNodes[framenum, i,:, 0] = pos_list[framenum][0]
                         retNodes[framenum, i,:, 1] = pos_list[framenum][1]
+                        retNodes[framenum, i,:, 2] = getAngle([pos_list[framenum][0],pos_list[framenum][1]])
 
         for ped, ped_other in edges.keys():
             i, j = list_of_nodes[ped], list_of_nodes[ped_other]
@@ -181,7 +186,7 @@ class ST_GRAPH():
                         if not self.body:
                             retEdges[framenum, i*(numNodes) + j, :] = getVector(edge.edge_pos_list[framenum])
                         else:
-                            retEdges[framenum, i*(numNodes) + j, :,:] = getVector(edge.edge_pos_list[framenum],False)           
+                            retEdges[framenum, i*(numNodes) + j, :,:2] = getVector(edge.edge_pos_list[framenum],False)           
             else:
                 # Spatial edge
                 for framenum in range(self.seq_length):
@@ -193,8 +198,9 @@ class ST_GRAPH():
                             retEdges[framenum, i*numNodes + j, :] = getVector(edge.edge_pos_list[framenum])
                             retEdges[framenum, j*numNodes + i, :] = -np.copy(retEdges[framenum, i*(numNodes) + j, :])
                         else:
-                            retEdges[framenum, i*numNodes + j, :,:] = getVector(edge.edge_pos_list[framenum],False)
-                            retEdges[framenum, j*numNodes + i, :,:] = -np.copy(retEdges[framenum, i*(numNodes) + j, :,:])
+
+                            retEdges[framenum, i*numNodes + j, :,:2] = getVector(edge.edge_pos_list[framenum],False)
+                            retEdges[framenum, j*numNodes + i, :,:2] = -np.copy(retEdges[framenum, i*(numNodes) + j, :,:2])
         if not self.body:
             return retNodes[:,:,None,:], retEdges[:,:,None,:], retNodePresent, retEdgePresent
         else:

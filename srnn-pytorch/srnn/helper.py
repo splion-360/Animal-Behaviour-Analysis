@@ -23,24 +23,23 @@ def getVector(pos_list,body=True):
         pos_i = np.array(pos_list[0]).transpose((1,0))
         pos_j = np.array(pos_list[1]).transpose((1,0))
 
-        lieTensor_i,_ = lieSpace(torch.from_numpy(pos_i[None,None,:,:]),False)
-        lieTensor_j,_ = lieSpace(torch.from_numpy(pos_j[None,None,:,:]),False)
+
         
-        angle_i = lieTensor_i.squeeze()[:,2].detach().cpu().numpy()
-        angle_j = lieTensor_j.squeeze()[:,2].detach().cpu().numpy()
-        angle = np.vstack((angle_i,angle_j)).T
-        
-        return np.hstack((np.array(pos_i) - np.array(pos_j),angle))
-        
-        #return np.array(pos_i) - np.array(pos_j)
+        return np.array(pos_i) - np.array(pos_j)
         # '''
         # New technique
         
         # '''
         # # return (pos_i[:,None,:]-pos_j[None,:,:]).reshape(-1,2)
         
-        
+def getAngle(pos_list):
+    
+    pos_i = np.vstack((pos_list[0],pos_list[1])).T
+ 
+    lieTensor_i,_ = lieSpace(torch.from_numpy(pos_i[None,None,:,:]),False)
+    angle_i = lieTensor_i.squeeze()[:,2].detach().cpu().numpy()
 
+    return angle_i.T
 
 def getMagnitudeAndDirection(*args):
     '''

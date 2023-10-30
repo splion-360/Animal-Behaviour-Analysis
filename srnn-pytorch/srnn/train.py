@@ -33,9 +33,9 @@ def main():
                         help='Size of Human Human Edge RNN hidden state')
 
     # Input and output size
-    parser.add_argument('--human_node_input_size', type=int, default=4,
+    parser.add_argument('--human_node_input_size', type=int, default=2,
                         help='Dimension of the node features')
-    parser.add_argument('--human_human_edge_input_size', type=int, default=4,
+    parser.add_argument('--human_human_edge_input_size', type=int, default=2,
                         help='Dimension of the edge features')
     parser.add_argument('--human_node_output_size', type=int, default=5,
                         help='Dimension of the node output')
