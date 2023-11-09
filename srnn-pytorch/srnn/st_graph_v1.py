@@ -43,13 +43,12 @@ class ST_GRAPH():
             # source_seq is a list of numpy arrays
             # where each numpy array corresponds to a single frame
             source_seq = source_batch[sequence]
-    
+
             for framenum in range(self.seq_length):
                 # Each frame is a numpy array
                 # each row in the array is of the form
                 # pedID, x, y
-                frame = source_seq[framenum]
-
+                frame = source_seq[framenum].reshape(-1,source_seq[framenum].shape[-1])[:,None,:]
                 # Add nodes
                 for ped in range(frame.shape[0]):
 
@@ -77,7 +76,7 @@ class ST_GRAPH():
                         # and the node at previous time-step
                         edge_id = (pedID, pedID)
                         pos_edge = (self.nodes[sequence][pedID].getPosition(framenum-1), pos)
-                        print(pos_edge)
+       
                         if edge_id not in self.edges[sequence]:
                             edge_type = 'H-H/T'
                             edge_pos_list = {}
@@ -92,8 +91,18 @@ class ST_GRAPH():
                 # TODO:
                 # Can be pruned by considering pedestrians who are close to each other
                 # Add spatial edges
+                self.bodyline_keypoints = [0,3,6,9,10,11]
+                frame = source_seq[framenum][:,self.bodyline_keypoints,:]
+                frame = frame.reshape(-1,source_seq[framenum].shape[-1])[None,:,:]
+
                 for ped_in in range(frame.shape[1]):
-                    for ped_out in range(ped_in+1, frame.shape[1]):
+                    mice_1 = list(range(6))
+                    mice_2 = list(range(6,12))
+                    mice_3 = list(range(12,18))
+                    if ped_in in mice_1:checker = mice_2+mice_3
+                    elif ped_in in mice_2: checker = mice_1+mice_3
+                    else:checker = mice_1+mice_2
+                    for ped_out in checker:
 
                         if self.body:
                             pedID_in = ped_in
@@ -184,12 +193,13 @@ class ST_GRAPH():
         else:
             # retNodes = np.zeros((self.seq_length, numNodes, self.keypoints,2))
             # retEdges = np.zeros((self.seq_length, numNodes*numNodes, self.keypoints,2)) 
-            retNodes = np.zeros((self.seq_length, numNodes, self.keypoints,2))
-            retEdges = np.zeros((self.seq_length, numNodes, self.keypoints*self.keypoints,2)) 
+            retNodes = np.zeros((self.seq_length, numNodes,2))
+            retEdges = np.zeros((self.seq_length, numNodes*(self.keypoints+1),2)) 
             
         retNodePresent = [[] for c in range(self.seq_length)]
         retEdgePresent = [[] for c in range(self.seq_length)]
-
+        # print(nodes.keys())
+        # print(retEdges.shape)
         for i, ped in enumerate(nodes.keys()):
             list_of_nodes[ped] = i #[(i,j) for j in range(self.keypoints)]
             pos_list = nodes[ped].node_pos_list
@@ -199,23 +209,28 @@ class ST_GRAPH():
                     if not self.body:
                         retNodes[framenum, i, :] = list(pos_list[framenum])
                     else:
-                        retNodes[framenum, i,:, 0] = pos_list[framenum][0]
-                        retNodes[framenum, i,:, 1] = pos_list[framenum][1]
+                        # retNodes[framenum, i,:, 0] = pos_list[framenum][0]
+                        # retNodes[framenum, i,:, 1] = pos_list[framenum][1]
+                        retNodes[framenum, i, 0] = pos_list[framenum][0]
+                        retNodes[framenum, i, 1] = pos_list[framenum][1]
+        
+
+        marker = len(self.bodyline_keypoints)*2
         for ped, ped_other in edges.keys():
             # i, j = list_of_nodes[ped], list_of_nodes[ped_other]
             i,j  = ped,ped_other
             edge = edges[(ped, ped_other)]
-
             if ped == ped_other:
                 # Temporal edge
                 for framenum in range(self.seq_length):
                     if framenum in edge.edge_pos_list:
                         retEdgePresent[framenum].append((i, j))
                         if not self.body:
-                            retEdges[framenum, i*(numNodes) + j, :] = getVector(edge.edge_pos_list[framenum])
+                            retEdges[framenum, i*(marker) + j, :] = getVector(edge.edge_pos_list[framenum])
                         else:
                             # retEdges[framenum, i*(numNodes) + j, :,:] = getVector(edge.edge_pos_list[framenum],False)
-                            retEdges[framenum,:,i*(self.keypoints) + j,:] = getVector(edge.edge_pos_list[framenum],False)                 
+                     
+                            retEdges[framenum,i*(marker) + j,:] = getVector(edge.edge_pos_list[framenum],False)                 
             else:
                 # Spatial edge
                 for framenum in range(self.seq_length):
@@ -225,17 +240,18 @@ class ST_GRAPH():
                         # the position returned is a tuple of tuples
                         if not self.body:
                             retEdges[framenum, i*numNodes + j, :] = getVector(edge.edge_pos_list[framenum])
-                            retEdges[framenum, j*numNodes + i, :] = -np.copy(retEdges[framenum, i*(numNodes) + j, :])
+                            retEdges[framenum, j*numNodes + i, :] = -np.copy(retEdges[framenum, i*(marker) + j, :])
                         else:
                             # retEdges[framenum, i*numNodes + j, :,:] = getVector(edge.edge_pos_list[framenum],False)
                             # retEdges[framenum, j*numNodes + i, :,:] = -np.copy(retEdges[framenum, i*(numNodes) + j, :,:])
-                            retEdges[framenum,:, i*self.keypoints + j,:] = getVector(edge.edge_pos_list[framenum],False)
-                            retEdges[framenum,:,j*self.keypoints + i,:] = -np.copy(retEdges[framenum,:,i*(self.keypoints) + j,:])
+                            # print(i*numNodes + j,j*numNodes + i)
+                            retEdges[framenum,i*marker + j,:] = getVector(edge.edge_pos_list[framenum],False)
+                            retEdges[framenum,j*marker + i,:] = -np.copy(retEdges[framenum,i*(marker) + j,:])
                             
-        if not self.body:
-            return retNodes[:,:,None,:], retEdges[:,:,None,:], retNodePresent, retEdgePresent
-        else:
-            return retNodes, retEdges, retNodePresent, retEdgePresent
+        # if not self.body:
+        return retNodes[:,:,None,:], retEdges[:,:,None,:], retNodePresent, retEdgePresent
+        # else:
+        #     return retNodes, retEdges, retNodePresent, retEdgePresent
 
 class ST_NODE():
 

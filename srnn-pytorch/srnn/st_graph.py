@@ -172,7 +172,7 @@ class ST_GRAPH():
         for ped, ped_other in edges.keys():
             i, j = list_of_nodes[ped], list_of_nodes[ped_other]
             edge = edges[(ped, ped_other)]
-
+            
             if ped == ped_other:
                 # Temporal edge
                 for framenum in range(self.seq_length):

@@ -15,14 +15,17 @@ def getVector(pos_list,body=True):
     params:
     pos_list : A list of size two containing two (x, y) positions
     '''
+    # print(pos_list[1])
+    
     if body:
-        pos_i = pos_list[0]
-        pos_j = pos_list[1]
+        pos_i = np.array(pos_list[0])
+        pos_j = np.array(pos_list[1])
         return np.array(pos_i) - np.array(pos_j)
     else:
+        # pos_i = np.array(pos_list[0])
+        # pos_j = np.array(pos_list[1])
         pos_i = np.array(pos_list[0]).transpose((1,0))
         pos_j = np.array(pos_list[1]).transpose((1,0))
-
 
         
         return np.array(pos_i) - np.array(pos_j)
@@ -30,6 +33,7 @@ def getVector(pos_list,body=True):
         # New technique
         
         # '''
+  
         # # return (pos_i[:,None,:]-pos_j[None,:,:]).reshape(-1,2)
         
 def getAngle(pos_list):

@@ -127,7 +127,7 @@ class HumanHumanEdgeRNN(nn.Module):
         c : cell state of the current edgeRNN
         '''
         # Encode the input position
-        
+        # print(inp.shape)
         encoded_input = self.encoder_linear(inp)
         
         encoded_input,h,c = encoded_input.reshape(-1,encoded_input.shape[-1]),h.reshape(-1,h.shape[-1]),c.reshape(-1,c.shape[-1]) 
@@ -290,7 +290,6 @@ class SRNN(nn.Module):
             # Separate temporal and spatial edges
             temporal_edges = [x for x in edgeIDs if x[0] == x[1]]
             spatial_edges = [x for x in edgeIDs if x[0] != x[1]]
-
             # Find the nodes present in the current frame
             nodeIDs = nodesPresent[framenum]
             # print('Node IDs.........',nodeIDs)
@@ -298,15 +297,19 @@ class SRNN(nn.Module):
             nodes_current = nodes[framenum]
             edges_current = edges[framenum]
     
-
+       
             # print('Current Nodes',nodes_current.shape)
             # print('Current Edges',edges_current.shape)
             
 
             # Initialize temporary tensors
-
+            numNodes = nodes.shape[1]
             hidden_states_nodes_from_edges_temporal = Variable(torch.zeros(numNodes,keypoints,self.human_human_edge_rnn_size).cuda())
             hidden_states_nodes_from_edges_spatial = Variable(torch.zeros(numNodes, keypoints,self.human_human_edge_rnn_size).cuda())
+
+            #####
+            numNodes = 12
+            #####
 
             # If there are any edges
             if len(edgeIDs) != 0:
@@ -320,13 +323,17 @@ class SRNN(nn.Module):
                     list_of_temporal_nodes = torch.LongTensor([x[0] for x in edgeIDs if x[0] == x[1]]).cuda()
 
                     # Get the corresponding edge features
+                    
                     edges_temporal_start_end = torch.index_select(edges_current, 0, list_of_temporal_edges)
+                    
                     hidden_temporal_start_end = torch.index_select(hidden_states_edge_RNNs, 0, list_of_temporal_edges)
+                    
                     cell_temporal_start_end = torch.index_select(cell_states_edge_RNNs, 0, list_of_temporal_edges)
+                    
                     # Get the corresponding hidden statesview(1, -1)ll_states_edge_RNNs, 0, list_of_temporal_edges)
 
                     # Do forward pass through temporaledgeRNN
-                
+                    
                     h_temporal, c_temporal = self.humanhumanEdgeRNN_temporal(edges_temporal_start_end, hidden_temporal_start_end, cell_temporal_start_end)
                     # Update the hidden state and cell state
                     hidden_states_edge_RNNs[list_of_temporal_edges.data] = h_temporal.reshape(-1,keypoints,h_temporal.shape[-1])
@@ -335,23 +342,30 @@ class SRNN(nn.Module):
 
                     # Store the temporal hidden states obtained in the temporary tensor
                     hidden_states_nodes_from_edges_temporal[list_of_temporal_nodes] = h_temporal.reshape(-1,keypoints,h_temporal.shape[-1])
-
+                    
                 # Spatial Edges
                 if len(spatial_edges) != 0:
                     # Get the spatial edges
+           
                     list_of_spatial_edges = Variable(torch.LongTensor([x[0]*numNodes + x[1] for x in edgeIDs if x[0] != x[1]]).cuda())
+                    # print(list_of_spatial_edges)
+                    
+                    # print(len(hidden_states_edge_RNNs))
                     # Get nodes associated with the spatial edges
                     list_of_spatial_nodes = np.array([x[0] for x in edgeIDs if x[0] != x[1]])
-
                     # Get the corresponding edge features
                     edges_spatial_start_end = torch.index_select(edges_current, 0, list_of_spatial_edges)
+                   
+                    
+
                     # Get the corresponding hidden states
                     hidden_spatial_start_end = torch.index_select(hidden_states_edge_RNNs, 0, list_of_spatial_edges)
                     # Get the corresponding cell states
                     cell_spatial_start_end = torch.index_select(cell_states_edge_RNNs, 0, list_of_spatial_edges)
-
+                    
                     # Do forward pass through spatialedgeRNN
                     h_spatial, c_spatial = self.humanhumanEdgeRNN_spatial(edges_spatial_start_end, hidden_spatial_start_end, cell_spatial_start_end)
+                    
                     # print(hidden_spatial_start_end.shape)
                     # print("Hspatial")
                     # print(h_spatial.shape)
@@ -360,6 +374,7 @@ class SRNN(nn.Module):
                     # Update the hidden state and cell state
                     hidden_states_edge_RNNs[list_of_spatial_edges.data] = h_spatial.reshape(-1,keypoints,h_spatial.shape[-1])
                     cell_states_edge_RNNs[list_of_spatial_edges.data] = c_spatial.reshape(-1,keypoints,c_spatial.shape[-1])
+                    
 
                     # pass it to attention module
                     # For each node
@@ -386,7 +401,7 @@ class SRNN(nn.Module):
 
                         # Store the output of attention module in temporary tensor
                         hidden_states_nodes_from_edges_spatial[node] = hidden_attn_weighted.T
-              
+                    
             # If there are nodes in this frame
             if len(nodeIDs) != 0:
 
@@ -410,11 +425,15 @@ class SRNN(nn.Module):
                 # Update the hidden and cell states
                 hidden_states_node_RNNs[list_of_nodes.data] = h_nodes.reshape(-1,keypoints,h_nodes.shape[-1])
                 cell_states_node_RNNs[list_of_nodes.data] = c_nodes.reshape(-1,keypoints,c_nodes.shape[-1])
-
+            
         # Reshape the outputs carefully
+        #####
+        numNodes = nodes.shape[1]
+        ######
+        
         outputs_return = Variable(torch.zeros(self.seq_length, numNodes,keypoints,self.output_size).cuda())
+        
         for framenum in range(self.seq_length):
             for node in range(numNodes):
                 outputs_return[framenum, node, :] = outputs[framenum*numNodes + node, :]
-
         return outputs_return, hidden_states_node_RNNs, hidden_states_edge_RNNs, cell_states_node_RNNs, cell_states_edge_RNNs, attn_weights

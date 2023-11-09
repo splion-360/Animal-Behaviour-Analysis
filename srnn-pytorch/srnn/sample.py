@@ -39,6 +39,10 @@ def main():
     parser.add_argument('--save_dir', type=str, default="save/",
                         help='Directory where the trained model files are saved')
     
+    parser.add_argument(
+        "--all_kp", action="store_true", help="Boolean variable indicating the necessity of a utilising all the keypoints for ST-graph construction", default=False,
+    )
+    
 
     # Model to be loaded
     parser.add_argument('--epoch', type=int, default=99,
@@ -78,7 +82,7 @@ def main():
         print('Loaded checkpoint at {}'.format(model_epoch))
 
     dataloader = DataLoaderMouse(1, saved_args.seq_length + 1, forcePreProcess=True,body_keypoint=sample_args.body_keypoint,\
-                                 train_frac=saved_args.train_frac,train_data = sample_args.train,oob_indices=index)
+                                 train_frac=saved_args.train_frac,train_data = sample_args.train,oob_indices=index,allkp=saved_args.all_kp)
 
     dataloader.reset_batch_pointer()
 

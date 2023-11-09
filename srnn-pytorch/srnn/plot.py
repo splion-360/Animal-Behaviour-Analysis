@@ -261,6 +261,10 @@ class Visualisation:
         if color_dict is None: color_dict = {k:np.random.rand(3) for k in range(nodes.shape[1])}
         if attn_color is None: attn_color = {k:np.random.rand(3) for k in range(nodes.shape[2])}
         print('Mice Visualisation imminent')
+        if nodes.shape[1] > 3: 
+            print('in')
+            nodes = nodes.reshape(nodes.shape[0],3,12,2)
+            ret_nodes = ret_nodes.reshape(ret_nodes.shape[0],3,12,2)
 
         for frames in range(nodes.shape[0]):
             fig = plt.figure(figsize=(8, 8)) 
@@ -327,13 +331,13 @@ class Visualisation:
                 circle = plt.Circle((traj_ped_observed[0,0], traj_ped_observed[0,1]), 0.01, fill=True, color='k', linewidth=2)
                 ax.add_artist(circle)
                 
-                for other_ped in common_attn_peds:
-                    traj_ped_observed = current_frame[other_ped]
-                    weight = attn_w[other_ped]
+                # for other_ped in common_attn_peds:
+                #     traj_ped_observed = current_frame[other_ped]
+                #     weight = attn_w[other_ped]
         
-                    for i in range(traj_ped_observed.shape[0]): 
-                        circle = plt.Circle((traj_ped_observed[i,0], traj_ped_observed[i,1]), weight[i]*0.1, fill=False, color=attn_color[i], linewidth=2)
-                        ax.add_artist(circle)
+                #     for i in range(traj_ped_observed.shape[0]): 
+                #         circle = plt.Circle((traj_ped_observed[i,0], traj_ped_observed[i,1]), weight[i]*0.1, fill=False, color=attn_color[i], linewidth=2)
+                #         ax.add_artist(circle)
 
             if frames!=0:   
                 plt.title(f'Sequence number: {name//100}')

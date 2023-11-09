@@ -15,7 +15,7 @@ import torch
 from torch.autograd import Variable
 
 from utils_mouse import DataLoaderMouse
-from st_graph import ST_GRAPH
+from st_graph_v1 import ST_GRAPH
 from model import SRNN
 import numpy as np
 from criterion import Gaussian2DLikelihood, geodesic_loss
