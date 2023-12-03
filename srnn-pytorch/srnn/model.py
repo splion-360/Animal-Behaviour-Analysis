@@ -175,37 +175,22 @@ class EdgeAttention(nn.Module):
         '''
         # Number of spatial edges
         num_edges = h_spatials.size()[0]
-        # print(h_temporal.shape)
-        # Embed the temporal edgeRNN hidden state
-
         temporal_embed = self.temporal_edge_layer(h_temporal)
         temporal_embed = temporal_embed.squeeze(0)
-        # print(temporal_embed.shape)
-
-        ## Experiment 1: Replace the hidden states of temporal edges with an identity matrix to study the influcence of spatial edges on the overall
-        ## attention prediction.
-
-        # temporal_embed  = torch.ones_like(temporal_embed)
         # Embed the spatial edgeRNN hidden states
         spatial_embed = self.spatial_edge_layer(h_spatials)
-        # print(spatial_embed.shape)
-        # Dot based attention
-
-        # attn = torch.mv(spatial_embed, temporal_embed)
-
+ 
+        # Scaled Dot product attention
         attn = spatial_embed@temporal_embed.T
-        # print(attn.shape)
-
         # Variable length
         temperature = num_edges / np.sqrt(self.attention_size)
         attn = torch.mul(attn, temperature)
-
         # Softmax
         attn = torch.nn.functional.softmax(attn,dim=0)
 
         # Compute weighted value
         weighted_value = torch.t(h_spatials)@ attn    
-        # print(weighted_value.shape)    
+
         return weighted_value, attn
 
 
@@ -308,7 +293,7 @@ class SRNN(nn.Module):
             hidden_states_nodes_from_edges_spatial = Variable(torch.zeros(numNodes, keypoints,self.human_human_edge_rnn_size).cuda())
 
             #####
-            numNodes = 12
+            # numNodes = 12
             #####
 
             # If there are any edges
@@ -366,12 +351,6 @@ class SRNN(nn.Module):
                     # Do forward pass through spatialedgeRNN
                     h_spatial, c_spatial = self.humanhumanEdgeRNN_spatial(edges_spatial_start_end, hidden_spatial_start_end, cell_spatial_start_end)
                     
-                    # print(hidden_spatial_start_end.shape)
-                    # print("Hspatial")
-                    # print(h_spatial.shape)
-                    # print(hidden_states_nodes_from_edges_temporal[0].shape)
-                    # print("Htemporal")
-                    # Update the hidden state and cell state
                     hidden_states_edge_RNNs[list_of_spatial_edges.data] = h_spatial.reshape(-1,keypoints,h_spatial.shape[-1])
                     cell_states_edge_RNNs[list_of_spatial_edges.data] = c_spatial.reshape(-1,keypoints,c_spatial.shape[-1])
                     
@@ -393,8 +372,11 @@ class SRNN(nn.Module):
                         h_node = hidden_states_nodes_from_edges_temporal[node]
                
                         # Do forward pass through attention module
-   
-                        hidden_attn_weighted, attn_w = self.attn(h_node, h_spatial[l])
+                        # h_spatial is of size (72 X 256)
+                        ## Reshaping that as a tensor of size (6 X 12 X 256) selecting the arrays based on the spatial nodes. -> (2 X 12 X 256)
+                        h_spatial_attn = h_spatial.reshape(-1,keypoints,h_spatial.shape[-1])
+
+                        hidden_attn_weighted, attn_w = self.attn(h_node, h_spatial_attn[l].reshape(-1,h_spatial_attn.shape[-1]))
                 
                         # Store the attention weights
                         attn_weights[framenum][node] = (attn_w.data.cpu().numpy(), node_others)
@@ -428,7 +410,7 @@ class SRNN(nn.Module):
             
         # Reshape the outputs carefully
         #####
-        numNodes = nodes.shape[1]
+        # numNodes = nodes.shape[1]
         ######
         
         outputs_return = Variable(torch.zeros(self.seq_length, numNodes,keypoints,self.output_size).cuda())

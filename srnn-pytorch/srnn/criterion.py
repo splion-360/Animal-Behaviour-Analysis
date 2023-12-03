@@ -223,7 +223,7 @@ def geodesic_loss(outputs,targets,nodesPresent,args) -> float:
         targets   = targets.squeeze().reshape(targets.shape[0],3,12,targets.shape[-1])
     # Get the Lie-algebra space transformation of both the vectors
     if args.bodyline_only:
-        (transformed_pred,_),(transformed_gt,_) = lieSpace(joint_xy(ret_nodes),False),lieSpace(joint_xy(targets),False)
+        (transformed_pred,_),(transformed_gt,_) = lieSpace(joint_xy(ret_nodes),True),lieSpace(joint_xy(targets),True)
     else:
         (transformed_pred,_),(transformed_gt,_) = lieSpace(ret_nodes),lieSpace(targets)
 
@@ -256,7 +256,7 @@ def joint_xy(_input,
     return _input[:,:,joint_list,:]
 
 def lieSpace(og_input,
-             bodyline_only = True,
+             bodyline_only = False,
              root_joint:list=[3],tolerance = 1e-10) -> "tensor":
     '''
     Map the given input manifold into the lie algebra space
@@ -267,9 +267,9 @@ def lieSpace(og_input,
     Returns:
     lieTensor -> (N X 3 X 6 X 6) # Screw representation ==> Column Vector: [wx,wy,wz,vx,vy,vz]
     '''
-    if bodyline_only: root_joint = root_joint[0]
-    else: root_joint = 9 # Represents the tail base
-
+    if not bodyline_only: root_joint = root_joint[0]
+    else: root_joint = 3 # Represents the tail base
+ 
     uncentered_data = og_input.clone()
     _input = og_input.clone()
     _input = _input - _input[:,:,root_joint:root_joint+1,:] # Centering the data with respect to the root joint

@@ -39,10 +39,6 @@ def main():
     parser.add_argument('--save_dir', type=str, default="save/",
                         help='Directory where the trained model files are saved')
     
-    parser.add_argument(
-        "--all_kp", action="store_true", help="Boolean variable indicating the necessity of a utilising all the keypoints for ST-graph construction", default=False,
-    )
-    
 
     # Model to be loaded
     parser.add_argument('--epoch', type=int, default=99,
@@ -82,8 +78,7 @@ def main():
         print('Loaded checkpoint at {}'.format(model_epoch))
 
     dataloader = DataLoaderMouse(1, saved_args.seq_length + 1, forcePreProcess=True,body_keypoint=sample_args.body_keypoint,\
-                                 train_frac=saved_args.train_frac,train_data = sample_args.train,oob_indices=index,allkp=saved_args.all_kp,\
-                                    frames = 120, skip_frames_by_static=None)
+                                 train_frac=saved_args.train_frac,train_data = sample_args.train,oob_indices=index)
 
     dataloader.reset_batch_pointer()
 
@@ -178,10 +173,9 @@ def sample(nodes, edges, nodesPresent, edgesPresent, args, net, true_nodes, true
     c_edges = Variable(torch.zeros(numNodes * numNodes, nodes.shape[2],net.args.human_human_edge_rnn_size), volatile=True).cuda()
 
     # Propagate the observed length of the trajectory
-
     for tstep in range(args.obs_length-1):
         # Forward prop
-        #numNodes*numNodes
+
         out_obs, h_nodes, h_edges, c_nodes, c_edges, _ = net(nodes[tstep].view(1, numNodes, nodes.shape[2],2), edges[tstep].view(1, numNodes*numNodes,nodes.shape[2], 2), [nodesPresent[tstep]], [edgesPresent[tstep]], h_nodes, h_edges, c_nodes, c_edges)
         # loss_obs = Gaussian2DLikelihood(out_obs, nodes[tstep+1].view(1, numNodes, 2), [nodesPresent[tstep+1]])
 
@@ -189,7 +183,6 @@ def sample(nodes, edges, nodesPresent, edgesPresent, args, net, true_nodes, true
     ret_nodes = Variable(torch.zeros(args.obs_length + args.pred_length, numNodes, nodes.shape[2],2), volatile=True).cuda()
     ret_nodes[:args.obs_length, :, :,:] = nodes.clone()
 
-    #numNodes*numNodes
     ret_edges = Variable(torch.zeros((args.obs_length + args.pred_length), numNodes * numNodes,nodes.shape[2], 2), volatile=True).cuda()
     ret_edges[:args.obs_length, :, :,:] = edges.clone()
 
@@ -199,7 +192,6 @@ def sample(nodes, edges, nodesPresent, edgesPresent, args, net, true_nodes, true
     for tstep in range(args.obs_length-1, args.pred_length + args.obs_length-1):
         # TODO Not keeping track of nodes leaving the frame (or new nodes entering the frame, which I don't think we can do anyway)
         # Forward prop
-        #numNodes*numNodes
         outputs, h_nodes, h_edges, c_nodes, c_edges, attn_w = net(ret_nodes[tstep].view(1, numNodes,nodes.shape[2], 2), ret_edges[tstep].view(1, numNodes*numNodes,nodes.shape[2], 2),
                                                                   [nodesPresent[args.obs_length-1]], [edgesPresent[args.obs_length-1]], h_nodes, h_edges, c_nodes, c_edges)
         # print(attn_w)

@@ -354,7 +354,7 @@ class Visualisation:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--filename',type=str,default='results',help='Provide the filepath to the result.pkl file where the trajectory tensors are stored')
-    parser.add_argument('--skip',type=int,default=20,help='Number of frames to be skipped without storing')
+    parser.add_argument('--skip',type=int,default=5,help='Number of frames to be skipped without storing')
     parser.add_argument('--keypoint_id',type=str,default=None,help='Keypoint ID for each mice to be displayed in the table')
     parser.add_argument('--save_dir',type=str,default='\plots',help='Directory to store the saved .png files post visualisation')
     parser.add_argument('--load_dir',type=str,default="../save/",help="Directory to load the results.pkl file from")
