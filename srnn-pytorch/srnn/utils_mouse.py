@@ -494,13 +494,13 @@ class DataLoaderMouseOld():
             np.random.seed(seed[index])
             current_seq_data = self.data['sequences'][seq_id]['keypoints']
             frameList = np.arange(0,current_seq_data.shape[0])
-            numFrames = len(frameList) if self.skip_frames_by_static != 'Slice' or self.skip_frames_by_static != None else self.frame
+            numFrames = len(frameList) if self.skip_frames_by_static != 'Slice' else self.frame
             frameList_data.append(frameList)
             numMouse_data.append([])
             all_frame_data.append([])
             valid_frame_data.append([])
 
-            slice_ind = 0
+
             for ind, frame in enumerate(frameList):
                 miceWithPos = []
 
@@ -511,8 +511,9 @@ class DataLoaderMouseOld():
                     miceInFrame = current_seq_data[frame,:,:]           
 
                 if self.skip_frames_by_static == 'Slice':
-                    if slice_ind%self.frame == 0 and slice_ind != 0:
+                    if ind%self.frame == 0 and ind != 0:
                         break
+   
 
                 elif self.skip_frames_by_static == 'Skip':
                     if ind % skip != 0:

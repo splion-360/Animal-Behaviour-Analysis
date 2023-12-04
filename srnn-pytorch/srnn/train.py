@@ -214,6 +214,7 @@ def train(args):
         loss_epoch,loss_geo,loss_gauss  = 0,0,0
 
         # For each batch
+        print(dataloader.num_batches)
         for batch in range(dataloader.num_batches):
             start = time.time()
 
@@ -270,7 +271,8 @@ def train(args):
             loss_epoch += loss_batch
             loss_gauss += loss_gauss_batch
             loss_geo   += loss_joint_batch
-            # writer.add_scalar("Overall Training Loss per batch",loss_batch,batch)
+            print("Overall Training Loss per batch",loss_batch,batch)
+        
         # Compute loss for the entire epoch
         loss_epoch /= dataloader.num_batches
         loss_geo /= dataloader.num_batches
